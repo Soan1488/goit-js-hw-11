@@ -40,7 +40,7 @@ function onLoadMore(e) {
     if (resp.ok) {
       throw new Error(resp.status);
     } else {
-      galleryMarkUP(resp);
+      galleryMarkUP(resp)
     }
   });
 }
