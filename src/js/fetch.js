@@ -18,8 +18,13 @@ export default class ImageApiServise {
       per_page: 40,
       page: this.page,
     });
-    const response = await axios.get(`${BASE_URL}?${options}`);
-    return response.data.hits;
+    try {
+      const response = await axios.get(`${BASE_URL}?${options}`);
+      this.incrementPage();
+      return response.data;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   get query() {

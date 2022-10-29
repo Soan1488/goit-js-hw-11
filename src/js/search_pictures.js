@@ -10,6 +10,7 @@ const refs = {
 
 const imageApiServise = new ImageApiServise();
 
+console.log('F');
 
 refs.formEl.addEventListener('submit', onFormSubmit);
 refs.loadMore.addEventListener('click', onLoadMore);
@@ -18,30 +19,34 @@ async function onFormSubmit(e) {
   e.preventDefault();
   imageApiServise.query = e.currentTarget.elements.searchQuery.value;
   imageApiServise.resetPage();
+  galleryRemove();
 
   imageApiServise.getPictures().then(resp => {
-    if (resp.ok) {
-      throw new Error(resp.status);
-    } else if (resp.length === 0) {
+    if (resp.length === 0) {
+      refs.loadMore.classList.add('hidden');
       Notiflix.Notify.failure(
         'Sorry, there are no images matching your search query. Please try again.'
       );
       return;
     } else {
-      galleryRemove();
-      galleryMarkUP(resp);
+      Notiflix.Notify.success(`Hooray! We found ${resp.totalHits} images.`);
+      galleryMarkUP(resp.hits);
       refs.loadMore.classList.remove('hidden');
-      imageApiServise.incrementPage();
+      console.log(resp.totalHits);
     }
   });
 }
 
 function onLoadMore(e) {
   imageApiServise.getPictures().then(resp => {
-    if (resp.ok) {
-      throw new Error(resp.status);
+    if ((imageApiServise.page - 1) * 40 > resp.totalHits) {
+      Notiflix.Notify.failure(
+        "We're sorry, but you've reached the end of search results."
+      );
+      galleryMarkUP(resp.hits);
+      refs.loadMore.classList.add('hidden');
     } else {
-      galleryMarkUP(resp)
+      galleryMarkUP(resp.hits);
     }
   });
 }
