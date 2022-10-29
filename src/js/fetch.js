@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+const BASE_URL = 'https://pixabay.com/api/';
+const API_KEY = '30861394-45e6fcfd438676dc717df7503';
+
 export default class ImageApiServise {
   constructor() {
     this.searchQuery = '';
@@ -7,8 +10,6 @@ export default class ImageApiServise {
   }
 
   async getPictures() {
-    const BASE_URL = 'https://pixabay.com/api/';
-    const API_KEY = '30861394-45e6fcfd438676dc717df7503';
     const options = new URLSearchParams({
       key: API_KEY,
       q: this.searchQuery,
@@ -18,13 +19,9 @@ export default class ImageApiServise {
       per_page: 40,
       page: this.page,
     });
-    try {
-      const response = await axios.get(`${BASE_URL}?${options}`);
-      this.incrementPage();
-      return response.data;
-    } catch (error) {
-      console.log(error);
-    }
+    const response = await axios.get(`${BASE_URL}?${options}`);
+    this.incrementPage();
+    return response.data;
   }
 
   get query() {

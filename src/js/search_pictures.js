@@ -1,60 +1,93 @@
 import ImageApiServise from './fetch';
 import Notiflix from 'notiflix';
 import galleryTamplate from '../tamplates/gallery.hbs';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const refs = {
   formEl: document.querySelector('#search-form'),
   gelleryEl: document.querySelector('.gallery'),
-  loadMore: document.querySelector('.load-more'),
 };
 
 const imageApiServise = new ImageApiServise();
 
-console.log('F');
-
 refs.formEl.addEventListener('submit', onFormSubmit);
-refs.loadMore.addEventListener('click', onLoadMore);
+window.addEventListener('scroll', infiniteScroll);
 
 async function onFormSubmit(e) {
-  e.preventDefault();
-  imageApiServise.query = e.currentTarget.elements.searchQuery.value;
-  imageApiServise.resetPage();
-  galleryRemove();
+  try {
+    e.preventDefault();
+    imageApiServise.query = e.currentTarget.elements.searchQuery.value;
+    imageApiServise.resetPage();
+    galleryRemove();
 
-  imageApiServise.getPictures().then(resp => {
-    if (resp.length === 0) {
-      refs.loadMore.classList.add('hidden');
+    const images = await imageApiServise.getPictures();
+    if (images.totalHits === 0) {
       Notiflix.Notify.failure(
         'Sorry, there are no images matching your search query. Please try again.'
       );
       return;
     } else {
-      Notiflix.Notify.success(`Hooray! We found ${resp.totalHits} images.`);
-      galleryMarkUP(resp.hits);
-      refs.loadMore.classList.remove('hidden');
-      console.log(resp.totalHits);
+      Notiflix.Notify.success(`Hooray! We found ${images.totalHits} images.`);
+      galleryMarkUP(images.hits);
     }
-  });
+  } catch (error) {
+    Notiflix.Notify.warning(`Ooops ${error.message}`);
+  }
 }
 
-function onLoadMore(e) {
-  imageApiServise.getPictures().then(resp => {
-    if ((imageApiServise.page - 1) * 40 > resp.totalHits) {
+async function onLoadMore(e) {
+  try {
+    const images = await imageApiServise.getPictures();
+    if ((imageApiServise.page - 1) * 40 > images.totalHits) {
+      window.removeEventListener('scroll', infiniteScroll);
       Notiflix.Notify.failure(
         "We're sorry, but you've reached the end of search results."
       );
-      galleryMarkUP(resp.hits);
-      refs.loadMore.classList.add('hidden');
+      galleryMarkUP(images.hits);
     } else {
-      galleryMarkUP(resp.hits);
+      galleryMarkUP(images.hits);
+      lazyScroll();
     }
-  });
+  } catch (error) {
+    Notiflix.Notify.warning(`Ooops ${error.message}`);
+  }
 }
 
 function galleryMarkUP(images) {
   refs.gelleryEl.insertAdjacentHTML('beforeend', galleryTamplate(images));
+  galleryLightBox();
 }
 
 function galleryRemove() {
   refs.gelleryEl.innerHTML = '';
+}
+
+function galleryLightBox() {
+  let gallery = new SimpleLightbox('.gallery a', {
+    captionsData: 'alt',
+    captionDelay: 250,
+  });
+
+  gallery.on('show.simplelightbox', () => {});
+  gallery.refresh();
+}
+
+function lazyScroll() {
+  const { height: cardHeight } =
+    refs.gelleryEl.firstElementChild.getBoundingClientRect();
+
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
+}
+
+function infiniteScroll() {
+  if (
+    window.scrollY + window.innerHeight >=
+    document.documentElement.scrollHeight
+  ) {
+    onLoadMore();
+  }
 }
